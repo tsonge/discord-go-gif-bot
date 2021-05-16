@@ -1,0 +1,5 @@
+# holding the private env variables
+.env
+
+# for mac
+.DS_Store 
