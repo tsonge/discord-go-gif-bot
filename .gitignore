@@ -1,3 +1,7 @@
+# the compiled sgf_to_gif executable
+/sgf_to_gif
+
+
 # holding the private env variables
 .env
 

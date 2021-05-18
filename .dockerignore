@@ -1,0 +1,2 @@
+# dont copy executable -- this is to be built by the container during `docker build ...`
+sgf_to_gif
