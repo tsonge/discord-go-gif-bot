@@ -114,6 +114,10 @@ async def on_message(message):
     subprocess.run('rm output*', shell=True)
 
   if message.content.startswith(':play all moves'):
+
+    await message.channel.send('white is ' + game.get_player_name('w'))
+    await message.channel.send('black is ' + game.get_player_name('b'))
+
     with open('output.sgf', "wb") as f:
         f.write(game.serialise())
     subprocess.run(['./sgf_to_gif', '-d', '100', 'output.sgf'])
