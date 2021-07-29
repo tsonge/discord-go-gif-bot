@@ -110,18 +110,65 @@ async def on_message(message):
         f.write(copied_game.serialise())
     subprocess.run(['./sgf_to_gif', '-d', '100', '-t', str(stop_at_move_no), 'output.sgf'])
     output_gif_filename = 'output.' + str(stop_at_move_no + len(appended_moves)) + '.gif'
-    await message.channel.send(file=discord.File(output_gif_filename))
+    subprocess.run(['ffmpeg', '-i', output_gif_filename, '-movflags', 'faststart', '-pix_fmt', 'yuv420p', '-vf', "scale=trunc(iw/2)*2:trunc(ih/2)*2", 'output.mp4'], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    await message.channel.send(file=discord.File('output.mp4'))
     subprocess.run('rm output*', shell=True)
+
+  # do something like... :play from empty wb4 wb2 bb3 be19 
+  if message.content.startswith(':play from empty'):
+    game = sgf.Sgf_game(size=19)
+    msg = message.content.split(' ')
+    unparsed_appended_moves = msg[3:]
+
+    # unparsed_appended_moves looks like
+    # unparsed_appended_moves = [
+    #   'we8',
+    #   'wd7',
+    #   'bd8',
+    #   'bd18',
+    # ]
+
+    appended_moves = []
+
+    # note: uses 'j' instead of 'i' for the x-axis column name
+    for ind, x in enumerate(unparsed_appended_moves):
+      xaxisnumber = ord(x[1])-97 if ord(x[1]) <= 104 else ord(x[1])-98 # the j instead of i thingy
+      appended_moves.append((x[0], (int(x[2:])-1,xaxisnumber)))
+
+    # now it looks like
+    # appended_moves = [
+    #     ('b', (0,0)),
+    #     ('w', (1,0)),
+    #     ('b', (2,0)), # note that first number represents y-axis, grows from bottom-left from 0,0
+    #     ('b', (3,0)), # note that first number represents y-axis, grows from bottom-left from 0,0
+    #     ('b', (1,1)), # note that first number represents y-axis, grows from bottom-left from 0,0
+    # ]
+
+    for move in appended_moves:
+        new_node = game.extend_main_sequence()
+        new_node.set_move(move[0], move[1])
+
+    # render to gif
+    with open('output.sgf', "wb") as f:
+        f.write(game.serialise())
+    subprocess.run(['./sgf_to_gif', '-d', '100', 'output.sgf'])
+    subprocess.run(['ffmpeg', '-i', 'output.gif', '-movflags', 'faststart', '-pix_fmt', 'yuv420p', '-vf', "scale=trunc(iw/2)*2:trunc(ih/2)*2", 'output.mp4'], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    await message.channel.send(file=discord.File('output.mp4'))
+    subprocess.run('rm output*', shell=True)
+
 
   if message.content.startswith(':play all moves'):
 
-    await message.channel.send('white is ' + game.get_player_name('w'))
-    await message.channel.send('black is ' + game.get_player_name('b'))
+    white_player = game.get_player_name('w')
+    black_player = game.get_player_name('b')
+    await message.channel.send('white is ' + white_player)
+    await message.channel.send('black is ' + black_player)
 
     with open('output.sgf', "wb") as f:
         f.write(game.serialise())
     subprocess.run(['./sgf_to_gif', '-d', '100', 'output.sgf'])
-    await message.channel.send(file=discord.File('output.gif'))
+    subprocess.run(['ffmpeg', '-i', 'output.gif', '-movflags', 'faststart', '-pix_fmt', 'yuv420p', '-vf', "scale=trunc(iw/2)*2:trunc(ih/2)*2", 'output.mp4'], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    await message.channel.send(file=discord.File('output.mp4'))
     subprocess.run('rm output*', shell=True)
 
   if message.content.startswith(':play moves') and 'to' in message.content:
@@ -131,7 +178,9 @@ async def on_message(message):
     with open('output.sgf', "wb") as f:
         f.write(game.serialise())
     subprocess.run(f'./sgf_to_gif -d 100 -t "{starting_move} {ending_move}" output.sgf', shell=True)
-    await message.channel.send(file=discord.File('output.' + ending_move + '.gif'))
+    gif_filename = 'output.' + ending_move + '.gif'
+    subprocess.run(['ffmpeg', '-i', gif_filename, '-movflags', 'faststart', '-pix_fmt', 'yuv420p', '-vf', "scale=trunc(iw/2)*2:trunc(ih/2)*2", 'output.mp4'], stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    await message.channel.send(file=discord.File('output.mp4'))
     subprocess.run('rm output*', shell=True)
 
 
